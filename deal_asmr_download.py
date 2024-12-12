@@ -46,7 +46,7 @@ def rename_with_auto_increment(src, dest):
         new_dest = f"{dest_name}_{counter}{extension}"
         counter += 1
 
-    os.renames(src, new_dest)
+    # os.renames(src, new_dest)
 
 
 def batch_convert_and_check(directory):
