@@ -58,7 +58,7 @@ def check(row, cooked):
     check_folders(row, is_cooked=False)
     check_folders(cooked, is_cooked=True)
 
-class MultiFolderSelectorApp(QWidget):
+class BeforeTranslateApp(QWidget):
     row_label = "生肉"
     cooked_label = "熟肉"
     audio_label = "已处理音频"
@@ -145,6 +145,7 @@ class MultiFolderSelectorApp(QWidget):
             main_layout.addWidget(separator)
 
         self.output_text = QTextEdit(self)
+        self.output_text.setPlaceholderText("日志信息...")
         self.output_text.setReadOnly(True)
         self.output_text.setStyleSheet("font-size: 14px;")
         main_layout.addWidget(self.output_text)
@@ -216,10 +217,10 @@ class MultiFolderSelectorApp(QWidget):
     def print_log(self, text):
         self.output_text.append(text)
 
-# pyinstaller --onefile --windowed --clean --icon=../before.ico before_trans.py
+# pyinstaller --onefile --windowed --icon=../before.ico before_trans.py
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    ex = MultiFolderSelectorApp()
+    ex = BeforeTranslateApp()
     ex.show()
     sys.exit(app.exec())
