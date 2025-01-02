@@ -35,6 +35,7 @@ def restore_filenames(directory):
     os.remove(backup_file)
     print("文件名已恢复。")
 
+# 不要把备份文件打进压缩包
 if __name__ == '__main__':
     directory = "D:\ASMR\翻译\音频"
 

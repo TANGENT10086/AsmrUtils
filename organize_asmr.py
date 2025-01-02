@@ -225,15 +225,17 @@ def deal_subtitles(base_path, subtitles_path, is_artificial):
     if subtitles_path == "":
         return
 
-    zip_map = (os.path.splitext(zip_file)[0] for zip_file in os.listdir(subtitles_path))
+    zip_map = set(os.path.splitext(zip_file)[0] for zip_file in os.listdir(subtitles_path))
 
     for folder in [f for f in os.listdir(base_path) if f.startswith("RJ")]:
         folder_path = os.path.join(base_path, folder)
         if has_subtitles(folder_path):
             break
         info = simple_spider(folder)
+        print(info)
         for code in [info["album"], info["simple_id"], info["classic_id"]]:
             if code in zip_map:
+                print(code)
                 if is_artificial:
                     unzip_with_7zip(os.path.join(subtitles_path, code + ".zip"), folder_path)
                 else:
@@ -251,7 +253,8 @@ def main():
     artificial_path = "D:\ASMR\字幕\正常导入"
     machine_path = "D:\ASMR\字幕\whisper 3500"
     is_convert = True
-    is_organize = True
+    is_organize = False
+
     deal_subtitles(base_path, artificial_path, True)
     deal_subtitles(base_path, machine_path, False)
 

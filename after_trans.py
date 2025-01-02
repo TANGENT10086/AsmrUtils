@@ -13,7 +13,7 @@ from asmr_db import spider
 
 dir_path = r"D:\ASMR\处理\生肉"
 lrc_path = r"D:\ASMR\翻译\字幕"
-zip_path = r"D:\ASMR\字幕\whisper large-v3 3500"
+zip_path = r"D:\ASMR\字幕\whisper 3500"
 
 def move_lrc():
     if os.path.exists(lrc_path):
@@ -154,11 +154,11 @@ def zip_lrc():
 
 if __name__ == '__main__':
 
-    # # 生肉
-    # move_lrc()
-    # zip_lrc()
-    # process_audio()
-
-    # 熟肉
-    dir_path = "D:\ASMR\处理\\test"
+    # 生肉
+    move_lrc()
+    zip_lrc()
     process_audio()
+
+    # # 熟肉
+    # dir_path = "D:\ASMR\处理\熟肉"
+    # process_audio()

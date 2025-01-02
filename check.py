@@ -45,8 +45,9 @@ def check_duplication():
 
 
 def search_new_trans():
-    rjcode = [folder.split(" ")[0] for folder in os.listdir(asmr_path) if folder.startswith("RJ") and folder.split(" ")[1] == "N"]
-
+    rjcode = []
+    for dir in os.listdir(asmr_path):
+        rjcode = rjcode + [folder.split(" ")[0] for folder in os.listdir(os.path.join(asmr_path, dir)) if folder.startswith("RJ") and folder.split(" ")[1] == "N"]
     for z in os.listdir(trans_path):
         zcode = os.path.splitext(z)[0]
         if zcode in rjcode:
@@ -74,9 +75,9 @@ def check_duration():
 
 
 if __name__ == '__main__':
-    asmr_path = "D:\ASMR\处理\生肉"
+    # asmr_path = "D:\ASMR\处理\生肉"
     # check_duration()
-    check_cover()
+    # check_cover()
     # check_duplication()
-    # search_new_trans()
+    search_new_trans()
     # check_bitrate()
