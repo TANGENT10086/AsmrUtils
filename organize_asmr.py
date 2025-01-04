@@ -1,162 +1,14 @@
 import os
 import re
-import time
 import subprocess
 from colorama import Fore, Style
 from shutil import copyfile
 from mutagen.mp3 import MP3
-from PyQt6.QtWidgets import QCheckBox, QHBoxLayout, QApplication, QWidget, QVBoxLayout, QPushButton, QFileDialog, QLabel, QFrame, QTextEdit
-from PyQt6.QtCore import Qt
 
 from asmr_db import simple_spider
 
 BASE_EXTENSIONS = ('.mp3', '.wav', '.flac', '.lrc', '.srt', '.ass', '.vtt', '.zip')
 IMAGE_EXTENSIONS = ('.jpg', '.jpeg', '.png')
-
-class MyWindow(QWidget):
-    base = "根路径"
-    artificial = "非机翻文件路径"
-    mechanical = "机翻文件路径"
-
-    default_path = {
-        base : "D:\ASMR\处理",
-        artificial : "D:\ASMR\字幕\正常导入",
-        mechanical : "D:\ASMR\字幕\whisper 3500"
-    }
-
-    def __init__(self):
-        super().__init__()
-
-        # 设置窗口标题
-        self.setWindowTitle("翻译之前")
-        self.resize(400, 400)
-        self.center()
-
-        self.labels = {}
-        # 创建一个垂直布局
-        main_layout = QVBoxLayout()
-
-        # 根路径
-        main_layout.addLayout(self.get_layout(self.base))
-        main_layout.addWidget(self.separator())
-
-        # 非机翻路径
-        self.checkbox1 = QCheckBox("该路径下存放非机翻压缩包\n格式为zip，仅搜索与解压\n音频名和字幕名不一致需手动调整")
-        self.checkbox1.setChecked(True)
-        main_layout.addLayout(self.get_layout(self.artificial))
-        main_layout.addWidget(self.checkbox1)
-        main_layout.addWidget(self.separator())
-
-        # 机翻路径
-        self.checkbox2 = QCheckBox("该路径下存放机翻压缩包\n为了区别机翻生肉与熟肉，仅搜索，不解压\n其余同上")
-        self.checkbox2.setChecked(True)
-        main_layout.addLayout(self.get_layout(self.mechanical))
-        main_layout.addWidget(self.checkbox2)
-        main_layout.addWidget(self.separator())
-
-        # 是否转mp3
-        self.checkbox3 = QCheckBox("是否将所有wav转为mp3\n需安装ffmpeg并设置环境变量")
-        self.checkbox3.setChecked(True)
-        main_layout.addWidget(self.checkbox3)
-        main_layout.addWidget(self.separator())
-
-        # 是否重新组织文件
-        self.checkbox4 = QCheckBox("是否启用文件整理\n将音频和压缩包移动至根路径\n将图片移动至图片文件夹\n将其他文件移动到其他文件夹")
-        self.checkbox4.setChecked(True)
-        main_layout.addWidget(self.checkbox4)
-        main_layout.addWidget(self.separator())
-
-        # 开始按钮
-        h_layout = QHBoxLayout()
-        h_layout.addStretch(1)
-        start_button = QPushButton("开始", self)
-        start_button.setFixedSize(80, 40)
-        start_button.setStyleSheet("""
-            QPushButton {
-                background-color: #4CAF50;   /* 背景色 */
-                color: white;                /* 文字颜色 */
-                font-size: 16px;             /* 字体大小 */
-                border-radius: 10px;         /* 边框圆角 */
-                padding: 10px 5px;           /* 缩小左右内边距为5px */
-            }
-            QPushButton:hover {
-                background-color: #45a049;   /* 悬停时的背景色 */
-            }
-            QPushButton:pressed {
-                background-color: #3e8e41;   /* 按钮按下时的背景色 */
-            }
-        """)
-        start_button.clicked.connect(lambda: self.start_process())
-        h_layout.addWidget(start_button)
-        h_layout.addStretch(1)
-
-        main_layout.addStretch(1)
-        main_layout.addLayout(h_layout)
-        main_layout.addStretch(1)
-
-        self.setLayout(main_layout)
-
-    def center(self):
-        screen = self.screen().availableGeometry()
-        center_point = screen.center()
-        window_geo = self.frameGeometry()
-        window_geo.moveCenter(center_point)
-        self.move(window_geo.topLeft())
-
-    def open_folder(self, label_name, default_path):
-        # 选择路径
-        folder_path = QFileDialog.getExistingDirectory(self, f"Select {label_name}", default_path)
-        if folder_path:
-            self.labels[label_name].setText(f"{label_name}: {folder_path}")
-
-    def separator(self):
-        separator = QFrame(self)
-        separator.setFrameShape(QFrame.Shape.HLine)
-        separator.setFrameShadow(QFrame.Shadow.Sunken)
-        return separator
-
-    def get_layout(self, label_name):
-        h_layout = QHBoxLayout()
-        label = QLabel(f"{label_name}: {self.default_path[label_name]}", self)
-        label.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.labels[label_name] = label
-        h_layout.addWidget(label)
-        h_layout.addStretch(1)
-        button = QPushButton("选择", self)
-        button.clicked.connect(lambda checked, ln=label_name, dp="": self.open_folder(ln, dp))
-        h_layout.addWidget(button)
-        return h_layout
-
-    def start_process(self):
-        base_path = extract_path(self.labels[self.base].text())
-        artificial_path = extract_path(self.labels[self.artificial].text()) if self.checkbox1.isChecked() else ""
-        machine_path = extract_path(self.labels[self.mechanical].text()) if self.checkbox2.isChecked() else ""
-        is_convert = self.checkbox3.isChecked()
-        is_organize = self.checkbox4.isChecked()
-        time.sleep(1)
-        deal_subtitles(base_path, artificial_path, True)
-        deal_subtitles(base_path, machine_path, False)
-
-        for folder in [f for f in os.listdir(base_path) if f.startswith("RJ")]:
-            folder_path = os.path.join(base_path, folder)
-            if is_organize:
-                organize_files(folder_path)
-
-            if is_convert:
-                batch_convert(folder_path)
-
-            if has_subtitles(folder_path):
-                os.renames(folder_path, os.path.join(base_path, "熟肉", folder))
-            else:
-                os.renames(folder_path, os.path.join(base_path, "生肉", folder))
-
-        print("执行完毕")
-
-    default_path = {
-        base : "D:\ASMR\处理",
-        artificial : "D:\ASMR\字幕\正常导入",
-        mechanical : "D:\ASMR\字幕\whisper 3500"
-    }
 
 def organize_files(folder_path):
     for root, dirs, files in os.walk(folder_path):
@@ -273,8 +125,4 @@ def main():
             os.renames(folder_path, os.path.join(base_path, "生肉", folder))
 
 if __name__ == "__main__":
-    # app = QApplication(sys.argv)
-    # window = MyWindow()
-    # window.show()
-    # sys.exit(app.exec())
     main()

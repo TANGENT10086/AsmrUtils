@@ -1,5 +1,7 @@
+import os
 import re
 import urllib
+import langid
 from lxml import etree
 from colorama import Fore, Style
 from peewee import SqliteDatabase, Model, CharField
@@ -114,6 +116,50 @@ def simple_spider(rjcode):
         "classic_id": re.search(r'RJ[^.]*', classic_link[0]).group() if classic_link else "",
     }
 
+def force_spider(rjcode):
+    url = f"https://www.dlsite.com/maniax/work/=/product_id/{rjcode}.html"
+    headers = {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
+        "cookie": "localesuggested=true; locale=zh-cn; uniqid=0.68km8tf14h; _inflow_params=%7B%22referrer_uri%22%3A%22%22%7D; _inflow_ad_params=%7B%22ad_name%22%3A%22referral%22%7D; __lt__cid=77e5edb6-3b3f-4680-9e92-9568260f984d; _gaid=2019146159.1700016022; _tt_enable_cookie=1; _ttp=9WUw92AYXZI40PWxZ4LrZ8t59np; adr_id=symBOqdnts9BSWaFoCGdMuK0DiKMlZ05IFaO2cqa8NLm6I7g; _yjsu_yjad=1700016023.5e4493ac-1a47-4c69-8050-3778fb8cd65d; adultchecked=1; dlloginjp=1; DL_STAR_ID=8; cptl1=1; OptanonAlertBoxClosed=2024-02-06T07:18:09.330Z; _ga_sid=1707996694; _inflow_dlsite_params=%7B%22dlsite_referrer_url%22%3A%22https%3A%2F%2Fwww.dlsite.com%2Fmaniax%2Fcircle%2Fprofile%2F%3D%2Fmaker_id%2FRG69847.html%22%7D; _ga=GA1.1.2019146159.1700016022; _ga_YG879NVEC7=GS1.1.1707997183.1.1.1707997193.0.0.0; _ga_8CE5GPSG57=GS1.1.1707997184.1.1.1707997193.0.0.0; _ga_7SZK58MGBY=GS1.1.1707997184.1.1.1707997193.0.0.0; _ga_ZW5GTXK6EV=GS1.1.1707996694.5.1.1707997835.0.0.0; cptl3=1; cptl2=1; utm_c=work_link; session_state=cf30a107dd9b2750c66bb6cf7c713595c9ec0b5012a99c27d5c030b75e32ac87.4tced31jpiiok884cgoskkc8c; vendor_design=normal; __DLsite_SID=3rv9k5m4thpvk5tfqhgadeqbqq; loginchecked=1; uhashjp=9b27e974abc1a4048636f9370ec786717ca5ceb6; iom_jp=SFT000005448281; uid_jp=SFT000005448281; DL_PRODUCT_LOG=%2CRJ01219422%2CRJ357069%2CVJ01002159%2CRJ01258864%2CRJ01255152%2CRJ01241065%2CRJ01263771%2CRJ01228291%2CRJ01223120%2CRJ01238637%2CRJ01112305%2CRJ01083454%2CRJ01064664%2CRJ01217348%2CRJ01260482%2CRJ01121785%2CRJ01261790%2CRJ01188411%2CRJ01203763%2CRJ01265139%2CRJ01066842%2CRJ01127775%2CRJ01240271%2CRJ01215410%2CRJ01242069%2CRJ01064682%2CRJ01150190%2CRJ01237209%2CRJ01226682%2CRJ01245701%2CRJ01258637%2CRJ405653%2CRJ01178455%2CRJ01186078%2CRJ01246585%2CRJ01253951%2CRJ01255670%2CRJ01234618%2CRJ01258651%2CRJ01255005%2CRJ01260562%2CRJ01247565%2CRJ01256295%2CRJ01246984%2CRJ01258910%2CRJ01251834%2CRJ01260060%2CRJ01019849%2CRJ01228193%2CRJ01248548; OptanonConsent=isGpcEnabled=0&datestamp=Fri+Oct+04+2024+11%3A13%3A43+GMT%2B0800+(%E4%B8%AD%E5%9B%BD%E6%A0%87%E5%87%86%E6%97%B6%E9%97%B4)&version=6.23.0&isIABGlobal=false&hosts=&landingPath=NotLandingPage&AwaitingReconsent=false&groups=C0003%3A1%2CC0001%3A1%2CC0002%3A1%2CC0004%3A1%2CBG5%3A1&geolocation=US%3BCA"
+    }
+    tree = fetch_page(url, headers)
+    if tree is None:
+        return {
+            "album": rjcode,
+            "simple_id": "",
+            "classic_id": "",
+            "title": "default",
+            "artist": "default",
+            "maker_name": "default",
+            "tag": "default",
+            "sell_date": "default",
+            "author": "default",
+            "illustration": "default"
+        }
+    info = {
+        "album" : re.search(r'RJ[^.]*', tree.xpath("//a[contains(text(),'日文')]/@href")[0]).group() if tree.xpath("//a[contains(text(),'日文')]/@href") else rjcode,
+        "simple_id": "",
+        "classic_id": "",
+        "title": deal_title(tree.xpath("//*[@id='work_name']/text()")[0]),
+        "artist" : " / ".join(tree.xpath("//th[contains(text(),'声优')]/../td/a/text()")) or "未知艺术家",
+        "maker_name": tree.xpath('//*[@class="maker_name"]/a/text()')[0],
+        "tag": deal_tag(tree),
+        "sell_date": tree.xpath("//th[contains(text(),'贩卖日')]/../td/a/text()")[0],
+        "author": deal_author(tree),
+        "illustration": tree.xpath("//th[contains(text(),'插画')]/../td/a/text()")[0] if tree.xpath("//th[contains(text(),'插画')]/../td/a/text()") else "无"
+    }
+    for lang in ["繁体中文", "简体中文"]:
+        chinese_link = tree.xpath(f"//a[contains(text(),'{lang}')]/@href")
+        if chinese_link:
+            if lang == "简体中文":
+                info["simple_id"] = re.search(r'RJ[^.]*', chinese_link[0]).group()
+            else:
+                info["classic_id"] = re.search(r'RJ[^.]*', chinese_link[0]).group()
+            chinese_tree = fetch_page(chinese_link[0], headers)
+            if chinese_tree is not None:
+                info["title"] = deal_title(chinese_tree.xpath("//*[@id='work_name']/text()")[0])
+    return info
+
 def fetch_page(url, headers, retries=3, timeout=10):
     while retries >= 0:
         try:
@@ -155,6 +201,11 @@ def deal_title(title):
         '犯xれ': '犯され',
         'モブxなどなど': 'モブ姦などなど',
         'おxん': 'おまん',
+        'KU100': '',
+        'xポで': 'ンポで',
+
+        '反向x奸': '反向奸',
+        '小x穴': '小穴',
 
         'xリ': 'ロリ',
         'ロx': 'ロリ',
@@ -229,3 +280,91 @@ def deal_author(tree):
         return " ".join(author)
     return "无"
 
+def is_chinese(title):
+    # 简体中文和繁体中文的返回值都会zh
+    return langid.classify(title)[0] == "zh"
+
+# 对每一条RJ号都进行爬取，更新标题，简体RJ号和繁体RJ号
+def full_update():
+    asmr_path = "E:\ASMR"
+    # 遍历
+    for dir in os.listdir(asmr_path):
+        for folder in os.listdir(os.path.join(asmr_path, dir)):
+            rjcode = folder.split(" ")[0]
+            suffix = " N " if folder.split(" ")[1] == "N" else " "
+            folder_title = deal_title(folder[len(rjcode)+len(suffix):])
+
+            product = Product.get(Product.id == rjcode)
+            print("id:", product.id, " simple_id:", product.simple_id, " classic_id:", product.classic_id)
+
+            info = force_spider(rjcode)
+            if is_chinese(info["title"]):
+                if is_chinese(folder_title):
+                    product.title = folder_title if len(folder_title) < len(info["title"]) else info["title"]
+                else:
+                    product.title = info["title"]
+            else:
+                if is_chinese(folder_title):
+                    product.title = folder_title
+                else:
+                    product.title = folder_title if len(folder_title) < len(info["title"]) else info["title"]
+
+            product.simple_id = info["simple_id"]
+
+            product.classic_id = info["classic_id"]
+
+            if product.title != folder_title:
+                folder_path = os.path.join(asmr_path, dir, folder)
+                target_path = os.path.join(asmr_path, dir, rjcode + suffix + product.title)
+                os.rename(folder_path, target_path)
+                print(folder_path)
+                print(target_path)
+            print("id:", product.id, " simple_id:", product.simple_id, " classic_id:", product.classic_id)
+            print()
+            product.save()
+
+# 不爬取信息，只同步文件夹标题和数据库标题的差异
+def fast_update():
+    asmr_path = "E:\ASMR"
+    # 遍历
+    for dir in os.listdir(asmr_path):
+        for folder in os.listdir(os.path.join(asmr_path, dir)):
+            rjcode = folder.split(" ")[0]
+            suffix = " N " if folder.split(" ")[1] == "N" else " "
+            folder_title = deal_title(folder[len(rjcode)+len(suffix):])
+            product = Product.get(Product.id == rjcode)
+            if is_chinese(folder_title):
+                if is_chinese(product.title):
+                    if len(folder_title) < len(product.title):
+                        print(f"product.title: {product.title} -> {folder_title}")
+                        product.title = folder_title
+                        product.save()
+                    elif len(product.title) < len(folder_title):
+                        print(f"folder_title: {folder_title} -> {product.title}")
+                        folder_path = os.path.join(asmr_path, dir, folder)
+                        target_path = os.path.join(asmr_path, dir, rjcode + suffix + product.title)
+                        os.rename(folder_path, target_path)
+                else:
+                    print(f"product.title: {product.title} -> {folder_title}")
+                    product.title = folder_title
+                    product.save()
+            else:
+                if is_chinese(product.title):
+                    print(f"folder_title: {folder_title} -> {product.title}")
+                    folder_path = os.path.join(asmr_path, dir, folder)
+                    target_path = os.path.join(asmr_path, dir, rjcode + suffix + product.title)
+                    os.rename(folder_path, target_path)
+                else:
+                    if len(folder_title) < len(product.title):
+                        print(f"product.title: {product.title} -> {folder_title}")
+                        product.title = folder_title
+                        product.save()
+                    elif len(product.title) < len(folder_title):
+                        print(f"folder_title: {folder_title} -> {product.title}")
+                        folder_path = os.path.join(asmr_path, dir, folder)
+                        target_path = os.path.join(asmr_path, dir, rjcode + suffix + product.title)
+                        os.rename(folder_path, target_path)
+
+if __name__ == '__main__':
+    # full_update()
+    fast_update()
