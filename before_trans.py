@@ -17,9 +17,10 @@ def copy_and_prefix(source_path, target_path):
             continue
         folder_path = os.path.join(source_path, folder)
         for file in os.listdir(folder_path):
-            if not file.endswith(".mp3"):
+            if not file.endswith((".mp3", ".wav", ".flac")):
                 continue
             filename = os.path.splitext(file)[0]
+            file_ext = os.path.splitext(file)[1].lower()
             filename = (filename
                         .replace('&', '~')
                         .replace('#', ' ')
@@ -28,7 +29,7 @@ def copy_and_prefix(source_path, target_path):
                         .replace("\"", "")
                         .replace("'", ""))
             filename = filename.strip()
-            legalFilename = filename + ".mp3"
+            legalFilename = filename + file_ext
             if legalFilename != file:
                 os.renames(os.path.join(folder_path, file), os.path.join(folder_path, legalFilename))
             copyfile(os.path.join(folder_path, legalFilename), os.path.join(target_path, folder + "_" + legalFilename))

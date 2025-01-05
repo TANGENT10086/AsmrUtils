@@ -367,4 +367,5 @@ def fast_update():
 
 if __name__ == '__main__':
     # full_update()
-    fast_update()
+    # fast_update()
+    print(is_chinese("魔法少女肛虐計劃 蒼穹之序章 海藍寶石公主"))
