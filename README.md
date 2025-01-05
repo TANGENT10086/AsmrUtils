@@ -20,9 +20,9 @@
 
 ​		本项目的正常运行需要待翻译的生肉满足一定的格式，详情如下图所示。
 
-![](.\img\dir_format.png)
+![Image text](./img/dir_format.png)
 
-![](./img/folder_format.png)
+![Image text](./img/folder_format.png)
 
 
 
@@ -32,11 +32,11 @@
 
 ​		这个工具就是将作品的RJ号作为每个音轨的前缀，翻译完成后，通过另一个”翻译后工具“将lrc文件移动到对应位置，效果如下图所示。
 
-![before_trans_audio](.\img\before_trans_audio.png)
+![Image text](./img/before_trans_audio.png)
 
 ​		这个功能由于非常简单，所以做了图形化界面，但是由于能力有限，还是有些小毛病，在运行期间，窗口会卡死，不用管，这说明运行一切正常，详情如下图所示。
 
-![](./img/before_trans_interface.png)
+![Image text](./img/before_trans_interface.png)
 
 #### 2、翻译后工具 after_trans
 
@@ -44,13 +44,15 @@
 
 ​		这部分主要功能包括将翻译后的lrc文件放入对应的作品文件夹，并且将lrc文件打包存放，所以这里需要准备存放lrc的文件夹和存放lrc压缩包的文件夹，代码中也将这两部分路径和生肉总文件夹路径单独列出来，方便更改
 
-![](./img/after_trans_path.png)
+![Image text](./img/after_trans_path.png)
 
 ​		除了上述功能外，还有一些整理方面的功能，包括爬取dlsite作品页面（需翻墙，如果还是不行，可开启v2ray的tun模式），将作品信息存放到数据库中，修改音频元信息，包括RJ号，声优和封面，同时修改文件夹的desktop.ini，可在查看->超大图标下浏览，然后用potplayer播放，效果如下图所示。
 
-![](./img/after_trans_result.png)
+![Image text](./img/after_trans_result.png)
 
 ​		整体效果比foobar2000智享阁版本要差一些，但胜在不卡，音频一多，foobar2000就经常卡退，当然，也可能是我电脑太烂了。除此之外，还可以看完整作品名，文件夹悬停的话，也可以看介绍信息（还没做）。
+
+​		
 
 
 
