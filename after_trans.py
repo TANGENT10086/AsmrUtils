@@ -79,7 +79,7 @@ def select_cover(folder, info):
     return info
 
 def set_mp3_info(file, info):
-    del_cover(file)
+    del_all_mp3_info(file)
     audio = MP3(file)
     if audio.tags is None:
         audio.add_tags()
@@ -90,16 +90,14 @@ def set_mp3_info(file, info):
 
     audio.save()
 
-def del_cover(mp3_dir):
+def del_all_mp3_info(mp3_dir):
     audio = MP3(mp3_dir)
 
     if audio.tags is None:
-        audio.add_tags()
+        return
 
-    if isinstance(audio.tags, ID3):
-        for tag in list(audio.tags.keys()):
-            if tag.startswith('APIC'):
-                del audio.tags[tag]
+    for tag in list(audio.tags.keys()):
+        del audio.tags[tag]
 
     audio.save()
 
@@ -154,11 +152,11 @@ def zip_lrc():
 
 if __name__ == '__main__':
 
-    # 生肉
-    move_lrc()
-    zip_lrc()
-    process_audio()
-
-    # # 熟肉
-    # dir_path = "D:\ASMR\处理\熟肉"
+    # # 生肉
+    # move_lrc()
+    # zip_lrc()
     # process_audio()
+
+    # 熟肉
+    dir_path = "D:\ASMR\处理\熟肉"
+    process_audio()

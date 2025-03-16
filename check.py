@@ -34,26 +34,6 @@ def check_bitrate():
     print("\n".join(low320))
 
 
-def check_duplication():
-    last_rjcode = None
-    asmr = [folder for folder in os.listdir(asmr_path) if folder.startswith("RJ")]
-    for folder in asmr:
-        rjcode = folder.split(" ")[0]
-        if rjcode == last_rjcode:
-            print(last_rjcode)
-        last_rjcode = rjcode
-
-
-def search_new_trans():
-    rjcode = []
-    for dir in os.listdir(asmr_path):
-        rjcode = rjcode + [folder.split(" ")[0] for folder in os.listdir(os.path.join(asmr_path, dir)) if folder.startswith("RJ") and folder.split(" ")[1] == "N"]
-    for z in os.listdir(trans_path):
-        zcode = os.path.splitext(z)[0]
-        if zcode in rjcode:
-            print(zcode)
-
-
 def check_cover():
     for folder in [f for f in os.listdir(asmr_path) if f.startswith("RJ")]:
         folder_path = os.path.join(asmr_path, folder)
@@ -73,11 +53,17 @@ def check_duration():
             if duration > 3600:
                 print(f"{os.path.join(folder_path, file)} - 时长: {duration / 60:.2f} 分钟")
 
+def search_trans():
+    rjcode = []
+    for dir in os.listdir(asmr_path):
+        rjcode = rjcode + [folder.split(" ")[0] for folder in os.listdir(os.path.join(asmr_path, dir)) if folder.startswith("RJ") and folder.split(" ")[1] == "N"]
+    for z in os.listdir(trans_path):
+        zcode = os.path.splitext(z)[0]
+        if zcode in rjcode:
+            print(zcode)
 
 if __name__ == '__main__':
     # asmr_path = "D:\ASMR\处理\生肉"
-    # check_duration()
+    check_duration()
     # check_cover()
-    # check_duplication()
-    search_new_trans()
     # check_bitrate()

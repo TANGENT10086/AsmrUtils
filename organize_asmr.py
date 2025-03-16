@@ -1,6 +1,9 @@
 import os
 import re
 import subprocess
+import zipfile
+from pathlib import Path
+
 from colorama import Fore, Style
 from shutil import copyfile
 from mutagen.mp3 import MP3
@@ -41,33 +44,47 @@ def rename_with_auto_increment(src, dest):
     os.renames(src, new_dest)
 
 def batch_convert(directory):
-    wav_files = [f for root, dirs, files in os.walk(directory) for f in files if f.endswith('.wav')]
-    for wav_file in wav_files:
-        wav_path = os.path.join(directory, wav_file)
-        output_file = os.path.splitext(wav_path)[0] + '.mp3'
+    # 支持的文件扩展名
+    supported_formats = ('.wav', '.flac')
+
+    # 查找支持的音频文件
+    audio_files = [
+        os.path.join(root, f)
+        for root, dirs, files in os.walk(directory)
+        for f in files if f.endswith(supported_formats)
+    ]
+
+    for audio_file in audio_files:
+        output_file = os.path.splitext(audio_file)[0] + '.mp3'
+
+        # 如果目标 MP3 文件已存在，先删除
         if os.path.exists(output_file):
             os.remove(output_file)
-        command = f'ffmpeg -loglevel error -i "{wav_path}" -b:a 320k "{output_file}" -y'
-        subprocess.run(command, shell=True)
-        mp3_file = os.path.splitext(wav_path)[0] + '.mp3'
-        if MP3(mp3_file).info.bitrate / 1000 == 320:
-            os.remove(wav_path)
-        else:
-            print(Fore.YELLOW + f"警告: {mp3_file} 未达到 320 kbps 的比特率，未删除 {wav_file}。" + Style.RESET_ALL)
 
-def unzip_with_7zip(zip_path, output_dir):
-    if zip_path:
-        command = [
-            "D:\\Tool\\7Zip\\7-Zip\\7z.exe",
-            "x",
-            zip_path,
-            f"-o{output_dir}",
-            "-aoa"
-        ]
-        try:
-            subprocess.run(command, stdout=subprocess.DEVNULL)
-        except subprocess.CalledProcessError as e:
-            print(Fore.RED + f"{zip_path} 解压失败: {e}" + Style.RESET_ALL)
+        # 使用 ffmpeg 转换音频文件为 MP3
+        command = f'ffmpeg -loglevel error -i "{audio_file}" -b:a 320k "{output_file}" -y'
+        subprocess.run(command, shell=True)
+
+        # 检查生成的 MP3 文件的比特率
+        if os.path.exists(output_file):
+            mp3_file = MP3(output_file)
+            if mp3_file.info.bitrate / 1000 == 320:
+                os.remove(audio_file)  # 删除原始文件
+            else:
+                print(
+                    Fore.YELLOW + f"警告: {output_file} 未达到 320 kbps 的比特率，未删除 {audio_file}。" + Style.RESET_ALL)
+
+def unzip(zip_path, output_dir):
+    try:
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            for file in zip_ref.namelist():
+                decoded_name = file.encode('cp437').decode('gbk')
+                zip_ref.extract(file, output_dir)
+                (Path(output_dir) / file).rename(Path(output_dir) / decoded_name)
+    except FileNotFoundError:
+        print(Fore.RED + f"{zip_path} ZIP文件不存在" + Style.RESET_ALL)
+    except PermissionError:
+        print(Fore.RED + f"{zip_path} 无法写入目标目录，请检查权限" + Style.RESET_ALL)
 
 def extract_path(text):
     match = re.search(r"([A-Za-z]:[\\/][^ ](?:[^\n]*)*)", text)
@@ -89,14 +106,14 @@ def deal_subtitles(base_path, subtitles_path, is_artificial):
             if code in zip_map:
                 print(code)
                 if is_artificial:
-                    unzip_with_7zip(os.path.join(subtitles_path, code + ".zip"), folder_path)
+                    unzip(os.path.join(subtitles_path, code + ".zip"), folder_path)
                 else:
                     copyfile(os.path.join(subtitles_path, code + ".zip"), os.path.join(folder_path, code + ".zip"))
                 break
 
 def has_subtitles(folder_path):
     for root, dirs, files in os.walk(folder_path):
-        if any(file.endswith(('.lrc', '.srt', '.ass', '.vtt')) for file in files):
+        if any(file.endswith(('.lrc', '.srt', '.ass', '.vtt', ".zip")) for file in files):
             return True
     return False
 
